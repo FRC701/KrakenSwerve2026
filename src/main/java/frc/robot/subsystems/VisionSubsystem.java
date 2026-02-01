@@ -87,7 +87,7 @@ public class VisionSubsystem extends SubsystemBase {
     // 2d version
     private Transform2d m_robotToCamTransform2d = Constants.VisionConstants.robotToCam2d;
     // get entire apriltag layout
-    private AprilTagFieldLayout mAprilTagFieldLayout = AprilTagFields.k2026RebuiltWelded.loadAprilTagLayoutField();
+    //private AprilTagFieldLayout mAprilTagFieldLayout = AprilTagFields.k2026RebuiltWelded.loadAprilTagLayoutField();//depracated
     // get pose of specific april tag from java file
 
     Pigeon2 ahrs = new Pigeon2(0); // CAN ID
@@ -130,46 +130,47 @@ public class VisionSubsystem extends SubsystemBase {
             // AprilTagID=16;
             Pose3d m_AprilTagPose3d = FieldLayoutRebuiltWelded.aprilTags.get(AprilTagID);// Blue Speaker (left)
             Pose2d m_AprilTagPose2d = m_AprilTagPose3d.toPose2d();// OK
+            Rotation2d m_gyroAngle = ahrs.getRotation2d();// OK
 
+            
             Transform3d m_CameraToTargetTransform3d = getTargetTransform();// OK
             // Return the heading of the robot as a edu.wpi.first.math.geometry.Rotation2d.
-            Rotation2d m_gyroAngle = ahrs.getRotation2d();// OK
             // Return the horizontal (X) distance of the robot to the best identified
             // apriltag in meters
-            final double m_targetDistance = getTargetDistance();// OK
-
+            final double m_targetDistance = getTargetDistance();// OK      
+            final double m_targetPitch = getTargetPitch();
             final double m_targetHeight = getTargetTransformHeight();
             // get yaw to target
             Rotation2d m_targetYaw = Rotation2d.fromDegrees(-getTargetYaw());// OK
-            // get the target's camera-relative translation.
-            Translation2d m_cameraToTargetTranslation = PhotonUtils.estimateCameraToTargetTranslation(m_targetDistance,
-                    m_targetYaw);// OK
-            // get the Transform2d that takes us from the camera to the target.
-            Transform2d m_CameraToTargetTransform2d = PhotonUtils.estimateCameraToTarget(
-                    m_cameraToTargetTranslation, m_AprilTagPose2d, m_gyroAngle);// OK
-
+            
             // Estimates the pose of the robot in the field coordinate system, given the
             // pose of the fiducial tag, the robot relative to the camera, and the target
             // relative to the camera.
 
-            // Calculate robot's field relative pose
-
-            Pose3d m_AprilTagTargetPose3d = FieldLayoutRebuiltWelded.aprilTags.get(AprilTagID);
-            Pose3d robotPose3dRelativeToField = PhotonUtils.estimateFieldToRobotAprilTag(m_CameraToTargetTransform3d,
-                    m_AprilTagTargetPose3d, m_robotToCamTransform3d);// Not OK
-            // calculate distance to target
-
-            double distanceToTarget = PhotonUtils.getDistanceToPose(robotPose3dRelativeToField.toPose2d(),
-                    m_AprilTagPose2d);// OK
             // Estimate the position of the robot in the field.
             Pose2d m_fieldRobotPose = PhotonUtils.estimateFieldToRobot(
                     Constants.VisionConstants.kCameraHeightMeters,m_targetHeight,
-                    Constants.VisionConstants.kCameraMountAngle, getTargetPitch(), m_targetYaw,
+                    Constants.VisionConstants.kCameraMountAngle,m_targetPitch , m_targetYaw,
                     m_gyroAngle, m_AprilTagPose2d,
                     m_robotToCamTransform2d);
 
+ 
+
+            // get the target's camera-relative translation.
+            //            Translation2d m_cameraToTargetTranslation = PhotonUtils.estimateCameraToTargetTranslation(m_targetDistance,
+            //                  m_targetYaw);// OK
+
+            // get the Transform2d that takes us from the camera to the target.
+            //  Transform2d m_CameraToTargetTransform2d = PhotonUtils.estimateCameraToTarget(
+            //       m_cameraToTargetTranslation, m_AprilTagPose2d, m_gyroAngle);// OK
+
+                    
+            // Pose3d m_AprilTagTargetPose3d = FieldLayoutRebuiltWelded.aprilTags.get(AprilTagID);
+            // Pose3d robotPose3dRelativeToField = PhotonUtils.estimateFieldToRobotAprilTag(m_CameraToTargetTransform3d,
+            //         m_AprilTagTargetPose3d, m_robotToCamTransform3d);// Not OK
+            // calculate distance to target
             // Do this in either robot periodic or subsystem periodic
-            m_field.setRobotPose(robotPose3dRelativeToField.toPose2d());
+           // m_field.setRobotPose(robotPose3dRelativeToField.toPose2d());
 
         }
     }
@@ -222,10 +223,10 @@ public class VisionSubsystem extends SubsystemBase {
 
     public Transform3d getTargetTransform() {
         return (getBestTarget().getBestCameraToTarget());
-    }
-
+    } 
+ 
     public double getTargetTransformHeight() {
-        return (getBestTarget().getBestCameraToTarget().getZ());
+       return (getBestTarget().getBestCameraToTarget().getZ());
     }
 
     // public double getDistance() {
