@@ -83,9 +83,9 @@ public class VisionSubsystem extends SubsystemBase {
     // Pose estimator
     private PhotonPoseEstimator mPoseEstimator;
     // read in Cam to robot transform
-    private Transform3d m_robotToCamTransform3d = Constants.VisionConstants.robotToCam3d;
+    private Transform3d m_robotToCamTransform3d = Constants.VisionConstants.kRobotToCam3d;
     // 2d version
-    private Transform2d m_robotToCamTransform2d = Constants.VisionConstants.robotToCam2d;
+    private Transform2d m_robotToCamTransform2d = Constants.VisionConstants.kRobotToCam2d;
     // get entire apriltag layout
     //private AprilTagFieldLayout mAprilTagFieldLayout = AprilTagFields.k2026RebuiltWelded.loadAprilTagLayoutField();//depracated
     // get pose of specific april tag from java file
@@ -150,7 +150,7 @@ public class VisionSubsystem extends SubsystemBase {
             // Estimate the position of the robot in the field.
             Pose2d m_fieldRobotPose = PhotonUtils.estimateFieldToRobot(
                     Constants.VisionConstants.kCameraHeightMeters,m_targetHeight,
-                    Constants.VisionConstants.kCameraMountAngle,m_targetPitch , m_targetYaw,
+                    Constants.VisionConstants.kCameraMountPitchAngle,m_targetPitch , m_targetYaw,
                     m_gyroAngle, m_AprilTagPose2d,
                     m_robotToCamTransform2d);
 
@@ -340,7 +340,7 @@ public class VisionSubsystem extends SubsystemBase {
             SmartDashboard.putString("Target Height", getTargetTransformHeight() + "");
             SmartDashboard.putString("Target String", getString() + "");
             SmartDashboard.putNumber("Camera Height", Constants.VisionConstants.kCameraHeightMeters);
-            SmartDashboard.putNumber("Camera Pitch", Constants.VisionConstants.kCameraMountAngle);
+            SmartDashboard.putNumber("Camera Pitch", Constants.VisionConstants.kCameraMountPitchAngle);
             SmartDashboard.putString("Camera Name", Constants.VisionConstants.cameraName);
             SmartDashboard.putNumber("Target Distance X-Plane", getTargetDistance()); // OK//m_targetDistance
             // SmartDashboard.putNumber("camtotargetX", camtotargetx);// OK
