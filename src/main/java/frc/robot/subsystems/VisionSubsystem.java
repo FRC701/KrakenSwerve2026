@@ -29,8 +29,7 @@ public class VisionSubsystem extends SubsystemBase {
     m_camera = new PhotonCamera(Constants.Vision.kcameraName);
 
     AprilTagFieldLayout fieldLayout =
-        AprilTagFields.k2026RebuiltWelded.loadAprilTagLayoutField();
-
+        AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
     m_poseEstimator =
         new PhotonPoseEstimator(
             fieldLayout,

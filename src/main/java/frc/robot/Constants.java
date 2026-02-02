@@ -43,9 +43,6 @@ public class Constants {
         public static final Transform3d kRobotToCam3d = new Transform3d(
                 new Translation3d(kCameraForwardMeters, kCameraLeftMeters, kCameraUpMeters),
                 new Rotation3d(kCameraMountRollAngleRad, kCameraMountPitchAngleRad, kCameraMountYawAngleRad));
-        public static final Transform2d kRobotToCam2d = new Transform2d(Units.inchesToMeters(kCameraForwardMeters),
-                Units.inchesToMeters(kCameraLeftMeters),
-                new Rotation2d(kCameraMountRollAngleRad, kCameraMountPitchAngleRad));
 
   // Vision trust assumptions (1σ)
   public static final double kVisionPosStdDevMeters = 0.7;
