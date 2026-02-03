@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -35,18 +37,15 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
-    private static final double kSimLoopPeriod = 0.004; // 4 ms
+
+    private static final double kSimLoopPeriod = 0.004;
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
 
-    /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
-    /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
-    /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
-    /* Swerve requests to apply during SysId characterization */
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization =
             new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization =
@@ -54,45 +53,35 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization =
             new SwerveRequest.SysIdSwerveRotation();
 
-    // Vision subsystem (registered with CommandScheduler so periodic() runs)
     private final VisionSubsystem m_visionSubsystem = new VisionSubsystem();
 
-    /*
-     * SysId routine for characterizing translation. This is used to find PID gains
-     * for the drive motors.
-     */
+    /* === Field visualization === */
+    private final Field2d m_field = new Field2d();
+
     private final SysIdRoutine m_sysIdRoutineTranslation =
             new SysIdRoutine(
                     new SysIdRoutine.Config(
-                            null, // Use default ramp rate (1 V/s)
-                            Volts.of(4), // Reduce dynamic step voltage to 4 V to prevent brownout
-                            null, // Use default timeout (10 s)
+                            null,
+                            Volts.of(4),
+                            null,
                             state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())),
                     new SysIdRoutine.Mechanism(
                             output -> setControl(m_translationCharacterization.withVolts(output)),
                             null,
                             this));
 
-    /*
-     * SysId routine for characterizing steer. This is used to find PID gains for
-     * the steer motors.
-     */
     private final SysIdRoutine m_sysIdRoutineSteer =
             new SysIdRoutine(
                     new SysIdRoutine.Config(
-                            null, // Use default ramp rate (1 V/s)
-                            Volts.of(7), // Use dynamic voltage of 7 V
-                            null, // Use default timeout (10 s)
+                            null,
+                            Volts.of(7),
+                            null,
                             state -> SignalLogger.writeString("SysIdSteer_State", state.toString())),
                     new SysIdRoutine.Mechanism(
                             volts -> setControl(m_steerCharacterization.withVolts(volts)),
                             null,
                             this));
 
-    /*
-     * SysId routine for characterizing rotation.
-     * This is used to find PID gains for the FieldCentricFacingAngle HeadingController.
-     */
     private final SysIdRoutine m_sysIdRoutineRotation =
             new SysIdRoutine(
                     new SysIdRoutine.Config(
@@ -108,90 +97,60 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                             null,
                             this));
 
-    /* The SysId routine to test */
     private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
 
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     */
     public CommandSwerveDrivetrain(
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, modules);
 
-        // Ensure VisionSubsystem.periodic() runs so it can cache results + publish telemetry
         CommandScheduler.getInstance().registerSubsystem(m_visionSubsystem);
+        SmartDashboard.putData("Field", m_field);
 
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+        if (Utils.isSimulation()) startSimThread();
     }
 
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     */
     public CommandSwerveDrivetrain(
             SwerveDrivetrainConstants drivetrainConstants,
             double odometryUpdateFrequency,
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
 
-        // Ensure VisionSubsystem.periodic() runs so it can cache results + publish telemetry
         CommandScheduler.getInstance().registerSubsystem(m_visionSubsystem);
+        SmartDashboard.putData("Field", m_field);
 
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+        if (Utils.isSimulation()) startSimThread();
     }
 
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     */
     public CommandSwerveDrivetrain(
             SwerveDrivetrainConstants drivetrainConstants,
             double odometryUpdateFrequency,
             Matrix<N3, N1> odometryStandardDeviation,
             Matrix<N3, N1> visionStandardDeviation,
             SwerveModuleConstants<?, ?, ?>... modules) {
-        super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation,
-                modules);
+        super(drivetrainConstants, odometryUpdateFrequency,
+                odometryStandardDeviation, visionStandardDeviation, modules);
 
-        // Ensure VisionSubsystem.periodic() runs so it can cache results + publish telemetry
         CommandScheduler.getInstance().registerSubsystem(m_visionSubsystem);
+        SmartDashboard.putData("Field", m_field);
 
-        if (Utils.isSimulation()) {
-            startSimThread();
-        }
+        if (Utils.isSimulation()) startSimThread();
     }
 
-    /**
-     * Returns a command that applies the specified control request to this swerve drivetrain.
-     */
     public Command applyRequest(Supplier<SwerveRequest> request) {
-        return run(() -> this.setControl(request.get()));
+        return run(() -> setControl(request.get()));
     }
 
-    /**
-     * Runs the SysId Quasistatic test in the given direction for the routine specified by
-     * {@link #m_sysIdRoutineToApply}.
-     */
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.quasistatic(direction);
     }
 
-    /**
-     * Runs the SysId Dynamic test in the given direction for the routine specified by
-     * {@link #m_sysIdRoutineToApply}.
-     */
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
     @Override
     public void periodic() {
-        /*
-         * Periodically try to apply the operator perspective.
-         */
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(
@@ -202,59 +161,40 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             });
         }
 
-        // --------------------------------------------------
-        // Vision fusion (PhotonVision / PhotonLib)
-        // --------------------------------------------------
-        Pose2d currentPose = this.getState().Pose;
+        Pose2d currentPose = getState().Pose;
+        m_field.setRobotPose(currentPose);
 
         m_visionSubsystem.getLatestMeasurement(currentPose).ifPresent(m -> {
-            // PhotonLib timestampSeconds is in FPGA time; convert for CTRE timebase
-            this.addVisionMeasurement(m.pose(), m.timestampSeconds(), m.stdDevs());
+            addVisionMeasurement(m.pose(), m.timestampSeconds(), m.stdDevs());
         });
     }
 
     private void startSimThread() {
         m_lastSimTime = Utils.getCurrentTimeSeconds();
-
-        /* Run simulation at a faster rate so PID gains behave more reasonably */
         m_simNotifier = new Notifier(() -> {
-            final double currentTime = Utils.getCurrentTimeSeconds();
-            double deltaTime = currentTime - m_lastSimTime;
-            m_lastSimTime = currentTime;
-
-            /* use the measured time delta, get battery voltage from WPILib */
-            updateSimState(deltaTime, RobotController.getBatteryVoltage());
+            double now = Utils.getCurrentTimeSeconds();
+            double dt = now - m_lastSimTime;
+            m_lastSimTime = now;
+            updateSimState(dt, RobotController.getBatteryVoltage());
         });
         m_simNotifier.startPeriodic(kSimLoopPeriod);
     }
 
-    /**
-     * Adds a vision measurement to the Kalman Filter.
-     */
     @Override
-    public void addVisionMeasurement(Pose2d visionRobotPoseMeters, double timestampSeconds) {
-        super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds));
+    public void addVisionMeasurement(Pose2d pose, double timestamp) {
+        super.addVisionMeasurement(pose, Utils.fpgaToCurrentTime(timestamp));
     }
 
-    /**
-     * Adds a vision measurement to the Kalman Filter with standard deviations.
-     */
     @Override
     public void addVisionMeasurement(
-            Pose2d visionRobotPoseMeters,
-            double timestampSeconds,
-            Matrix<N3, N1> visionMeasurementStdDevs) {
-        super.addVisionMeasurement(
-                visionRobotPoseMeters,
-                Utils.fpgaToCurrentTime(timestampSeconds),
-                visionMeasurementStdDevs);
+            Pose2d pose,
+            double timestamp,
+            Matrix<N3, N1> stdDevs) {
+        super.addVisionMeasurement(pose, Utils.fpgaToCurrentTime(timestamp), stdDevs);
     }
 
-    /**
-     * Return the pose at a given timestamp, if the buffer is not empty.
-     */
     @Override
-    public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
-        return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+    public Optional<Pose2d> samplePoseAt(double timestamp) {
+        return super.samplePoseAt(Utils.fpgaToCurrentTime(timestamp));
     }
 }
