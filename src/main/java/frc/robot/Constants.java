@@ -31,9 +31,9 @@ public class Constants {
         // 90° is aligned with the positive Y axis, and -90° is aligned with the
         // negative Y axis.
         
-        public static final double kCameraMountPitchAngleRad = Units.degreesToRadians(120);
+        public static final double kCameraMountPitchAngleRad = Units.degreesToRadians(30);
         public static final double kCameraMountRollAngleRad = Units.degreesToRadians(0);
-        public static final double kCameraMountYawAngleRad = Units.degreesToRadians(180);
+        public static final double kCameraMountYawAngleRad = Units.degreesToRadians(0);
 
         public static final double kCameraForwardMeters = Units.inchesToMeters(11);
         public static final double kCameraLeftMeters = Units.inchesToMeters(11);
