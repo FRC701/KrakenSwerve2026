@@ -33,7 +33,7 @@ public class Constants {
         
         public static final double kCameraMountPitchAngleRad = Units.degreesToRadians(120);
         public static final double kCameraMountRollAngleRad = Units.degreesToRadians(0);
-        public static final double kCameraMountYawAngleRad = Units.degreesToRadians(0);
+        public static final double kCameraMountYawAngleRad = Units.degreesToRadians(180);
 
         public static final double kCameraForwardMeters = Units.inchesToMeters(11);
         public static final double kCameraLeftMeters = Units.inchesToMeters(11);
