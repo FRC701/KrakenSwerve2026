@@ -23,7 +23,6 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
@@ -103,11 +102,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, modules);
-
-        CommandScheduler.getInstance().registerSubsystem(m_visionSubsystem);
-        SmartDashboard.putData("Field", m_field);
-
-        if (Utils.isSimulation()) startSimThread();
+        configureShared();
     }
 
     public CommandSwerveDrivetrain(
@@ -115,11 +110,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             double odometryUpdateFrequency,
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
-
-        CommandScheduler.getInstance().registerSubsystem(m_visionSubsystem);
-        SmartDashboard.putData("Field", m_field);
-
-        if (Utils.isSimulation()) startSimThread();
+        configureShared();
     }
 
     public CommandSwerveDrivetrain(
@@ -130,10 +121,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency,
                 odometryStandardDeviation, visionStandardDeviation, modules);
+        configureShared();
+    }
 
-        CommandScheduler.getInstance().registerSubsystem(m_visionSubsystem);
+    private void configureShared() {
         SmartDashboard.putData("Field", m_field);
-
         if (Utils.isSimulation()) startSimThread();
     }
 
@@ -164,7 +156,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         Pose2d currentPose = getState().Pose;
         m_field.setRobotPose(currentPose);
 
-        m_visionSubsystem.getLatestMeasurement(currentPose).ifPresent(m -> {
+        m_visionSubsystem.getLatestMeasurement().ifPresent(m -> {
             addVisionMeasurement(m.pose(), m.timestampSeconds(), m.stdDevs());
         });
     }
