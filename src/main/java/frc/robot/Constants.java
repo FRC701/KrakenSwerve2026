@@ -53,6 +53,11 @@ public class Constants {
   // Acceptance rules
   public static final int kMinAprilTagsForPose = 1;
   public static final double kMaxAcceptableSingleTagAmbiguity = 0.25;
+
+  // Pose sanity / QC filters
+  public static final double kMaxPoseHeightMeters = 0.75;        // reject if estimated Z is off the floor
+  public static final double kFieldBoundaryMarginMeters = 0.5;   // allow slightly outside field edge
+  public static final double kMaxSingleTagDistanceMeters = 4.0;  // max reliable single-tag range
     }
 
 }

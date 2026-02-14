@@ -20,13 +20,14 @@ import frc.robot.Constants;
 public class VisionSubsystem extends SubsystemBase {
   private final PhotonCamera m_camera;
   private final PhotonPoseEstimator m_poseEstimator;
+  private final AprilTagFieldLayout m_fieldLayout;
 
   private Optional<VisionMeasurement> m_latestMeasurement = Optional.empty();
 
   public VisionSubsystem() {
     m_camera = new PhotonCamera(Constants.Vision.kcameraName);
-    AprilTagFieldLayout fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
-    m_poseEstimator = new PhotonPoseEstimator(fieldLayout, Constants.Vision.kRobotToCam3d);
+    m_fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+    m_poseEstimator = new PhotonPoseEstimator(m_fieldLayout, Constants.Vision.kRobotToCam3d);
   }
 
   public Optional<VisionMeasurement> getLatestMeasurement() {
@@ -43,12 +44,27 @@ public class VisionSubsystem extends SubsystemBase {
       if (result.targets.size() == 1
           && result.getBestTarget().getPoseAmbiguity() > Constants.Vision.kMaxAcceptableSingleTagAmbiguity) continue;
 
+      // Single-tag distance limit: PnP becomes unreliable at range
+      if (result.targets.size() == 1) {
+        double dist = result.getBestTarget().getBestCameraToTarget().getTranslation().getNorm();
+        if (dist > Constants.Vision.kMaxSingleTagDistanceMeters) continue;
+      }
+
       Optional<EstimatedRobotPose> estimate = m_poseEstimator.estimateCoprocMultiTagPose(result);
       if (estimate.isEmpty()) estimate = m_poseEstimator.estimateLowestAmbiguityPose(result);
       if (estimate.isEmpty()) continue;
 
+      // Z-height sanity: robot must be near the floor
+      if (Math.abs(estimate.get().estimatedPose.getZ()) > Constants.Vision.kMaxPoseHeightMeters) continue;
+
+      // Field boundary: reject poses outside the field (plus a small margin)
+      Pose2d p = estimate.get().estimatedPose.toPose2d();
+      double margin = Constants.Vision.kFieldBoundaryMarginMeters;
+      if (p.getX() < -margin || p.getX() > m_fieldLayout.getFieldLength() + margin
+          || p.getY() < -margin || p.getY() > m_fieldLayout.getFieldWidth() + margin) continue;
+
       m_latestMeasurement = Optional.of(new VisionMeasurement(
-          estimate.get().estimatedPose.toPose2d(),
+          p,
           estimate.get().timestampSeconds,
           Constants.Vision.kVisionStdDevs));
     }
