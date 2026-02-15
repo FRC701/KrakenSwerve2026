@@ -4,15 +4,11 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.VecBuilder;
-//import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
@@ -57,6 +53,11 @@ public class Constants {
   // Acceptance rules
   public static final int kMinAprilTagsForPose = 1;
   public static final double kMaxAcceptableSingleTagAmbiguity = 0.25;
+
+  // Pose sanity / QC filters
+  public static final double kMaxPoseHeightMeters = 0.75;        // reject if estimated Z is off the floor
+  public static final double kFieldBoundaryMarginMeters = 0.5;   // allow slightly outside field edge
+  public static final double kMaxSingleTagDistanceMeters = 4.0;  // max reliable single-tag range
     }
 
 }
